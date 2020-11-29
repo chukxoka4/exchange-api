@@ -1,11 +1,13 @@
 # 
-# Example file for retrieving data from the internet
+# This script would enable you write the exchange rates against the EURO base from the date 2010-01-15
+# The rates would be written to a HTML file in the same folder and also written to a Google Spreadsheet on your Google Drive 
 #
 from __future__ import print_function
 import urllib.request # instead of urllib2 like in Python 2.7
 import json
 import pickle
 import os.path
+import webbrowser
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -29,12 +31,13 @@ def postToGoogle(data):
         with open('token.pickle', 'rb') as token:
             creds = pickle.load(token)
     # If there are no (valid) credentials available, let the user log in.
+    credsy = 'credentials.json'
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+                credsy, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
         with open('token.pickle', 'wb') as token:
@@ -52,8 +55,8 @@ def postToGoogle(data):
     'values': values
     }
     result = service.spreadsheets().values().update(
-    spreadsheetId="1IblZP4qy5g2NdvU6lAU9Y43TiEIFhtp1eqoPZMlc75s", 
-    range="Exchange Rates!A2:B160",
+    spreadsheetId="Insert Sheet  Id", 
+    range="Insert Sheet Range",
     valueInputOption='RAW', body=body).execute()
     print('{0} cells updated.'.format(result.get('updatedCells')))
 
@@ -87,7 +90,7 @@ def printResults(data):
     # now we can access the contents of the JSON like any other Python object
     if "EUR" in theJSON["base"]:
         title = ("Exchange rate" + " (base) " + theJSON["base"])
-    # for each event, print the place where it occurred
+    # create a variable with the rates
     ratesList = theJSON["rates"]["2010-01-15"]
     table = ""
     for key, value in ratesList.items():
@@ -97,10 +100,14 @@ def printResults(data):
        </tr>"""
         table += setted % (key, value)
     content = html.format(**locals())
-    f = open("example.html", "w+")
+    f = open("exchangerates.html", "w+")
     f.write(content)
     # close file
     f.close()
+    filename = 'file:///'+ os.getcwd()+'/' + 'exchangerates.html'
+    print("File opening...")
+    webbrowser.open_new_tab(filename)
+    
 
 
 def main():
@@ -113,6 +120,7 @@ def main():
         data = webUrl.read().decode("utf-8")
         # print out our customized results
         printResults(data)
+        print("Check Containing folder for HTML file")
         postToGoogle(data)
   else:
         print("Received an error from server, cannot retrieve results " +
